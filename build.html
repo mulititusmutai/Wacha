@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beadazzle — Studio</title>
+    <link rel="icon" type="image/png" href="Logo2.png">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <link rel="stylesheet" href="css/site.css">
+    <link rel="stylesheet" href="css/build.css">
+    <link rel="stylesheet" href="css/build-skin.css">
+    <style>
+        /* diamond chain matrix (engine geometry) */
+        .diamond-unit { position: absolute; transform-origin: 50% 50%; contain: layout style; }
+        .diamond-unit .lattice { position: relative; }
+        .diamond-label {
+            position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-mono, monospace); font-size: 10px;
+            color: var(--text-muted, #888); pointer-events: none; z-index: 5;
+        }
+        /* asset source tabs */
+        .asset-tabs {
+            display: flex; gap: 4px; background: var(--bg-base);
+            border: 1px solid var(--border); border-radius: 999px;
+            padding: 4px; margin-bottom: 0.9rem;
+        }
+        /* small mono helper notes */
+        .rail-note {
+            margin-top: 6px; font-size: 10px; color: var(--text-muted);
+            font-family: var(--font-mono); line-height: 1.5;
+        }
+        .text-input-row {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-base); border: 1px solid var(--border);
+            border-radius: 12px; padding: 0 8px;
+        }
+        .text-input-row input[type="text"] {
+            flex: 1; border: none; height: 36px; font-size: 12px;
+            background: transparent; color: var(--text-main);
+            font-family: var(--font-ui); outline: none;
+        }
+        #diamond-colors { display: flex; gap: 4px; flex-wrap: wrap; }
+        #emoji-picker {
+            display: none; margin-top: 8px; background: var(--bg-base);
+            border: 1px solid var(--border); border-radius: 12px; padding: 8px;
+        }
+        #emoji-tabs { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+        #emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+        #heart-btn {
+            border: none; background: none; padding: 4px; cursor: pointer;
+            color: var(--text-sec); display: flex;
+        }
+        #heart-btn span { font-size: 16px; }
+    </style>
+</head>
+<body class="build-page">
+
+    <header class="site-header">
+        <a class="site-logo-link" href="index.html"><span class="site-logo">BEAD<span>AZZLE</span></span></a>
+        <nav class="site-nav">
+            <a href="index.html">HOME</a>
+            <a href="build.html" class="active">BUILD</a>
+            <a href="checkout.html">CHECKOUT</a>
+        </nav>
+        <div class="view-toggle" id="view-toggle">
+            <button class="view-toggle-btn active" id="btn-view-2d">2D</button>
+            <button class="view-toggle-btn" id="btn-view-3d" disabled>3D</button>
+        </div>
+        <div class="header-status">
+            <div class="system-status">
+                <div id="state-badge" class="status-badge active">LAYOUT MODE</div>
+            </div>
+            <div class="theme-switcher" id="theme-switcher">
+                <span class="icon" id="theme-icon">🌙</span>
+                <span id="theme-text">DARK</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="build-shell">
+
+        <!-- ══════════ BEAD STAGE (always visible) ══════════ -->
+        <main class="bead-stage" id="viewport">
+
+            <!-- 2D view -->
+            <div id="view-2d">
+                <div id="canvas-wrapper">
+                    <canvas id="cImage"></canvas>
+                    <div id="grid-container"></div>
+                </div>
+                <div class="viewport-hud" id="hud">
+                    <label>Zoom</label>
+                    <div class="zoom-stops" id="zoom-stops">
+                        <button class="zoom-stop-btn" data-stop="0.25">¼x</button>
+                        <button class="zoom-stop-btn" data-stop="0.5">½x</button>
+                        <button class="zoom-stop-btn" data-stop="0.75">¾x</button>
+                        <button class="zoom-stop-btn" data-stop="1">1x</button>
+                        <button class="zoom-stop-btn" data-stop="2">2x</button>
+                        <button class="zoom-stop-btn" data-stop="3">3x</button>
+                        <button class="zoom-stop-btn" data-stop="4">4x</button>
+                    </div>
+                    <span class="range-val" id="val-zoom" style="width:36px;">1x</span>
+                </div>
+            </div>
+
+            <!-- 3D view -->
+            <div id="view-3d" style="display:none;">
+                <canvas id="c3d"></canvas>
+                <div id="hud-3d-hint">drag to orbit · scroll to zoom</div>
+                <div id="hud-3d">
+                    <span class="hud3-label">Move</span>
+                    <button class="hud3-btn active" id="b3-orbit">Orbit</button>
+                    <button class="hud3-btn" id="b3-pan">Pan</button>
+                    <div class="hud3-sep"></div>
+                    <span class="hud3-label">Shape</span>
+                    <button class="hud3-btn active" id="b3-flat">Flat</button>
+                    <button class="hud3-btn" id="b3-circ">Circular</button>
+                    <div class="hud3-sep" id="circ-sep" style="display:none;"></div>
+                    <div id="circ-control">
+                        <span class="hud3-label">Circ</span>
+                        <input type="range" id="circ-slider" min="80" max="300" step="5" value="180">
+                        <span id="circ-val">180mm</span>
+                    </div>
+                    <div class="hud3-sep"></div>
+                    <button class="hud3-btn hud3-zoom" id="b3-zout">−</button>
+                    <button class="hud3-btn hud3-zoom" id="b3-zin">+</button>
+                    <button class="hud3-btn" id="b3-reset" style="font-size:10px;letter-spacing:.05em;">Reset</button>
+                </div>
+            </div>
+
+            <!-- bead options popover -->
+            <div class="node-popover" id="node-popover">
+                <div class="popover-header">
+                    <span>Bead Options</span>
+                    <span id="popover-coords">[0, 0]</span>
+                </div>
+                <div class="popover-body">
+                    <div class="tier-block" id="tier-1-block">
+                        <div class="tier-title">Primary Tone</div>
+                        <div class="tier-interface">
+                            <div class="source-swatch" id="t1-src"></div>
+                            <div class="option-array" id="t1-opts"></div>
+                        </div>
+                    </div>
+                    <div class="tier-block" id="tier-2-block">
+                        <div class="tier-title">Secondary Tone</div>
+                        <div class="tier-interface">
+                            <div class="source-swatch" id="t2-src"></div>
+                            <div class="option-array" id="t2-opts"></div>
+                        </div>
+                    </div>
+                    <div class="tier-block" id="tier-3-block">
+                        <div class="tier-title">Combined Blend</div>
+                        <div class="tier-interface">
+                            <div class="source-swatch" id="t3-src"></div>
+                            <div class="option-array" id="t3-opts"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="popover-footer">
+                    <button class="btn-macro" id="popover-cancel" style="max-width:80px;">Close</button>
+                </div>
+            </div>
+
+            <!-- stage strip: readout + hotkeys -->
+            <div class="stage-strip">
+                <div class="strip-block">
+                    <span class="strip-label">Size</span>
+                    <span class="strip-value" id="readout-dims">0.0 × 0.0 mm</span>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="strip-block">
+                    <span class="strip-label">Beads</span>
+                    <span class="strip-value" id="readout-volume">0</span>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="hotkeys">
+                    Move <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd>
+                    &nbsp;Scale <kbd>&lt;</kbd><kbd>&gt;</kbd>
+                    &nbsp;Center <kbd>/</kbd>
+                </div>
+            </div>
+        </main>
+
+        <!-- ══════════ CONTROL RAIL (scrollable deck) ══════════ -->
+        <aside class="sidebar left control-rail">
+            <div class="rail-head">
+                <span class="rail-title">Asset</span>
+                <label class="adv-toggle"><input type="checkbox" id="adv-toggle"><span>ADVANCED</span></label>
+                <span class="rail-step">1 / 4</span>
+            </div>
+            <div class="rail-dots"></div>
+            <div class="rail-stage">
+
+                <!-- 2 · ASSET SOURCE -->
+                <section class="rail-section is-active" data-section="2" data-name="Asset">
+                    <div class="accordion-inner">
+                        <div class="rail-kicker">01 · Asset source</div>
+
+                        <div class="asset-tabs">
+                            <button id="tab-image" class="tab-btn active">IMAGE</button>
+                            <button id="tab-text" class="tab-btn">TEXT</button>
+                            <button id="tab-stripes" class="tab-btn">STRIPES</button>
+                        </div>
+
+                        <!-- IMAGE PANEL -->
+                        <div id="panel-image">
+                            <div class="drop-zone" id="drop-zone">
+                                <p>Drag &amp; Drop Image Asset<br><span>or click to browse</span></p>
+                                <input type="file" id="file-input" accept="image/*" style="display:none;">
+                            </div>
+                        </div>
+
+                        <!-- TEXT PANEL -->
+                        <div id="panel-text" style="display:none;">
+                            <div class="text-input-row">
+                                <button id="heart-btn" aria-label="Open emoji picker">
+                                    <span>♥</span>
+                                </button>
+                                <input id="text-input" type="text" placeholder="Type a word or short phrase" />
+                            </div>
+
+                            <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+                                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                                    <label style="margin:0;">Text Color</label>
+                                    <input type="color" id="text-color-input" value="#ff5c78" title="Text Color" style="width:100%; height:28px; padding:2px;">
+                                </div>
+                                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                                    <label style="margin:0;">Background</label>
+                                    <input type="color" id="text-bg-color-input" value="#1c1813" title="Text Background Color" style="width:100%; height:28px; padding:2px;">
+                                </div>
+                            </div>
+
+                            <div id="emoji-picker">
+                                <div id="emoji-tabs"></div>
+                                <div id="emoji-grid"></div>
+                            </div>
+
+                            <select id="font-select" style="margin-top:10px;">
+                                <option value="Arial, sans-serif">Sans (Arial)</option>
+                                <option value="Georgia, serif">Serif (Georgia)</option>
+                                <option value="'Courier New', monospace">Mono (Courier)</option>
+                                <option value="Impact, sans-serif">Display (Impact)</option>
+                                <option value="'Comic Sans MS', cursive">Rounded (Comic Sans)</option>
+                                <option value="Segoe Script">Segoe Script · cursive</option>
+                                <option value="Brush Script MT">Brush Script MT · cursive</option>
+                                <option value="Lucida Handwriting">Lucida Handwriting · cursive</option>
+                                <option value="cursive">System cursive</option>
+                            </select>
+
+                            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">
+                                <span id="text-grid-readout">Auto Grid: -- × --</span>
+                                <span id="char-count">0 chars</span>
+                            </div>
+                        </div>
+
+                        <!-- STRIPES PANEL -->
+                        <div id="panel-stripes" style="display:none;">
+                            <div class="stripe-preview" id="stripe-preview"></div>
+                            <div id="stripe-list"></div>
+                            <button class="btn-add-stripe" id="btn-add-stripe">+ Add Stripe</button>
+                            <div class="rail-note">Weight = relative thickness. Stripes fill the grid top-to-bottom.</div>
+                        </div>
+
+                        <!-- OUTLINE BEADS -->
+                        <div class="control-group" style="margin-top:14px;">
+                            <label>Outline Beads</label>
+                            <div class="rocker-switch">
+                                <button id="outline-off" class="active">NONE</button>
+                                <button id="outline-on">OUTLINE</button>
+                            </div>
+                            <input type="color" id="input-outline-color" value="#1c1813" title="Outline color" style="margin-top:8px;">
+                            <div class="rail-note">First/last rows and columns use this color, matched to the nearest palette bead.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 1 · MATRIX STRUCTURE -->
+                <section class="rail-section" data-section="1" data-name="Matrix">
+                    <div class="accordion-inner">
+                        <div class="rail-kicker">02 · Matrix structure</div>
+
+                        <div class="control-group">
+                            <label>Item Type</label>
+                            <div class="rocker-switch" id="mode-switch">
+                                <button data-mode="bracelet" class="active">BRACELET</button>
+                                <button data-mode="earring">EARRING</button>
+                                <button data-mode="keychain">KEYCHAIN</button>
+                                <button data-mode="diamond">DIAMOND</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Columns (W)</label>
+                            <div class="bead-mode-toggle" id="col-level-group">
+                                <button data-level="S">SMALL</button>
+                                <button data-level="M" class="active">MEDIUM</button>
+                                <button data-level="L">LARGE</button>
+                            </div>
+                            <label style="margin-top:10px;" id="rows-label">Rows (H)</label>
+                            <div class="bead-mode-toggle" id="row-level-group">
+                                <button data-level="S">SMALL</button>
+                                <button data-level="M" class="active">MEDIUM</button>
+                                <button data-level="L">LARGE</button>
+                            </div>
+                            <!-- diamond mode repurposes this slot: TEXT vs FILL -->
+                            <div class="bead-mode-toggle" id="chain-mode-group" style="display:none;">
+                                <button data-chain-mode="TEXT" class="active">TEXT</button>
+                                <button data-chain-mode="FILL">FILL</button>
+                            </div>
+                            <div id="level-count-readout" style="margin-top:8px; font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">-- × -- beads</div>
+                        </div>
+
+                        <!-- Diamond chain controls (visible only in DIAMOND item type) -->
+                        <div class="control-group" id="chain-controls" style="display:none;">
+                            <label>Chain Count (diamonds)</label>
+                            <input type="number" id="chain-count" min="1" step="1" value="2">
+                            <div class="rail-note">Min 6 peyote rows per diamond — smaller requests are rejected.</div>
+                            <label style="margin-top:10px;">Per-Diamond Fills</label>
+                            <div id="diamond-colors"></div>
+                            <div class="rail-note" id="chain-mode-note"></div>
+                        </div>
+
+                        <!-- Bead Dimension Cascade -->
+                        <div class="control-group">
+                            <label>Bead Dimensions</label>
+                            <div class="bead-mode-toggle">
+                                <button id="bead-mode-standard" class="active">STANDARD</button>
+                                <button id="bead-mode-direct">DIRECT ENTRY</button>
+                            </div>
+
+                            <div id="bead-standard-panel">
+                                <div style="margin-bottom:6px;">
+                                    <label>Type</label>
+                                    <select id="bead-type-select">
+                                        <option value="rocaille">Czech Rocaille</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Size</label>
+                                    <select id="bead-size-select"></select>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">
+                                    <span id="bead-dim-readout">-- × -- mm</span>
+                                </div>
+                            </div>
+
+                            <div id="bead-direct-panel" style="display:none;">
+                                <div class="input-row">
+                                    <div style="flex:1"><label>Diameter (mm)</label><input type="number" id="input-diam" min="0.1" step="0.1" value="2.3"></div>
+                                    <div style="flex:1"><label>Pitch/Thick (mm)</label><input type="number" id="input-pitch" min="0.1" step="0.1" value="1.5"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3 · TELEMETRY (selector path required by the engine) -->
+                <section class="rail-section adv-off" data-section="3" data-name="Telemetry">
+                    <div class="accordion-inner">
+                        <div class="rail-kicker">ADV · Image telemetry</div>
+
+                        <div class="control-group">
+                            <label>Scale Factor</label>
+                            <div class="range-wrapper">
+                                <button class="btn-step" data-target="input-scale" data-dir="-1">-</button>
+                                <input type="range" id="input-scale" min="0.1" max="3" step="0.01" value="1.0">
+                                <button class="btn-step" data-target="input-scale" data-dir="1">+</button>
+                                <span class="range-val" id="val-scale">1.00x</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Saturation</label>
+                            <div class="range-wrapper">
+                                <button class="btn-step" data-target="input-saturate" data-dir="-1">-</button>
+                                <input type="range" id="input-saturate" min="0" max="3" step="0.05" value="1.0">
+                                <button class="btn-step" data-target="input-saturate" data-dir="1">+</button>
+                                <span class="range-val" id="val-saturate">1.0×</span>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Rotation &amp; Reflection</label>
+                            <div class="transform-btn-grid">
+                                <button class="btn-transform" id="btn-rot-ccw"><span class="t-icon">↺</span> Rotate CCW</button>
+                                <button class="btn-transform" id="btn-rot-cw"><span class="t-icon">↻</span> Rotate CW</button>
+                                <button class="btn-transform" id="btn-flip-h"><span class="t-icon">↔</span> Flip L/R</button>
+                                <button class="btn-transform" id="btn-flip-v"><span class="t-icon">↕</span> Flip U/D</button>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>Translation</label>
+                            <div class="dpad-cluster">
+                                <div></div>
+                                <button class="dpad-btn" id="dpad-up">↑</button>
+                                <div></div>
+                                <button class="dpad-btn" id="dpad-left">←</button>
+                                <div class="dpad-btn dpad-center">✛</div>
+                                <button class="dpad-btn" id="dpad-right">→</button>
+                                <div></div>
+                                <button class="dpad-btn" id="dpad-down">↓</button>
+                                <div></div>
+                            </div>
+                            <div class="step-readouts">
+                                <div class="step-readout-block">
+                                    <div class="readout-label">dx</div>
+                                    <div class="readout-value" id="readout-tx">0</div>
+                                </div>
+                                <div class="step-readout-block">
+                                    <div class="readout-label">dy</div>
+                                    <div class="readout-value" id="readout-ty">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4 · FINISH -->
+                <section class="rail-section" data-section="4" data-name="Finish">
+                    <div class="accordion-inner">
+                        <div class="rail-kicker">03 · Finish</div>
+
+                        <div class="control-group">
+                            <label>Processing Mode</label>
+                            <div class="rocker-switch">
+                                <button id="mode-dominant" data-mode="Dominant">DOMINANT</button>
+                                <button id="mode-blended" class="active" data-mode="Blended">BLENDED</button>
+                            </div>
+                            <div class="rail-note">Dominant keeps the boldest tone per bead; Blended mixes the two nearest.</div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Ground Color</label>
+                            <input type="color" id="input-ground" value="#0d0f1c">
+                            <div class="rail-note">The voids and canvas behind the bead lattice.</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- always-visible actions -->
+            <div class="rail-actions">
+                <button class="btn-action secondary" id="btn-revert" disabled>REVERT</button>
+                <button class="btn-action secondary" id="btn-center">CENTER</button>
+                <button class="btn-action secondary" id="btn-export">EXPORT</button>
+                <button class="btn-action secondary" id="btn-order">ORDER KIT</button>
+                <button class="btn-action primary" id="btn-compute">COMPUTE PATTERN</button>
+            </div>
+        </aside>
+    </div>
+
+    <div class="modal-overlay" id="export-modal-overlay">
+        <div class="export-modal">
+            <div class="modal-header">
+                <h2>EXPORT PATTERN</h2>
+                <button class="btn-step" id="close-export-modal">X</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-option" id="export-png-opt">
+                    <div class="export-icon">🖼</div>
+                    <div class="export-text">
+                        <h3>Visual PNG</h3>
+                        <p>Exports a high-resolution image containing the original asset, the computed bead pattern, physical dimensions, and a color legend with bead counts.</p>
+                    </div>
+                </div>
+                <div class="export-option" id="export-json-opt">
+                    <div class="export-icon">{ }</div>
+                    <div class="export-text">
+                        <h3>Bead Data (JSON)</h3>
+                        <p>Exports a structured JSON file containing metadata, bead counts by name, and the exact left-to-right row sequences for pattern reading.</p>
+                    </div>
+                </div>
+                <div class="export-option" id="export-order-opt">
+                    <div class="export-icon">🧾</div>
+                    <div class="export-text">
+                        <h3>Order This Kit</h3>
+                        <p>Sends the pattern to checkout: bead counts by color, physical dimensions and a preview image, ready to order as a kit.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toasts"></div>
+
+    <!-- boot watchdog: if the engine never arrives, say so instead of
+         leaving a silently dead page (usually a stale cached version —
+         a hard refresh fixes it) -->
+    <div id="boot-error" style="display:none; position:fixed; inset:0; z-index:3000; place-items:center; background:rgba(8,8,10,0.92); backdrop-filter:blur(8px);">
+        <div style="text-align:center; max-width:26rem; padding:2.2rem; border:1px solid var(--border); border-radius:20px; background:var(--glass-sheen), var(--bg-panel);">
+            <h2 style="font-size:1.2rem; margin-bottom:0.6rem;">The studio engine didn't load</h2>
+            <p style="color:var(--text-sec); font-size:0.9rem; line-height:1.6;">This is almost always a stale cached page mixing old and new files.
+            Do a hard refresh (<strong>Ctrl + Shift + R</strong>), and if the site is served from a folder
+            that was just updated, restart its local server.</p>
+        </div>
+    </div>
+    <script src="js/persist.js?v=1"></script>
+    <script src="js/rail.js?v=4"></script>
+    <script>
+        // Engine loader: ES modules need http(s); file:// (double-click) gets the bundle.
+        (function () {
+            var s = document.createElement('script');
+            if (location.protocol === 'file:' || /[?&]bundle/.test(location.search)) {
+                s.src = 'js/studio.bundle.js?v=1';
+            } else {
+                s.type = 'module';
+                s.src = 'js/studio.js?v=4';
+            }
+            document.head.appendChild(s);
+        })();
+    </script>
+    <script>
+        // Build → Checkout wiring (handoff mixin is merged onto the app
+        // instance by studio.js once it boots).
+        const wire = (attempt) => {
+            const app = window.app;
+            if (!app || typeof app.orderKit !== 'function') {
+                if (attempt > 80) {
+                    document.getElementById('boot-error').style.display = 'grid';
+                    return;
+                }
+                return setTimeout(() => wire(attempt + 1), 100);
+            }
+            document.getElementById('export-order-opt').addEventListener('click', () => app.orderKit());
+            document.getElementById('btn-order').addEventListener('click', () => app.orderKit());
+            if (!window.__persistBooted) {
+                window.__persistBooted = true;
+                if (window.BeadazzlePersist) window.BeadazzlePersist.init(app);
+            }
+        };
+        wire(0);
+    </script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beadazzle — Bead Pattern Studio</title>
+<link rel="icon" type="image/png" href="Logo2.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body class="site-page deck-page">
+
+<header class="site-header">
+  <a class="site-logo-link" href="index.html"><span class="site-logo">BEAD<span>AZZLE</span></span></a>
+  <nav class="site-nav">
+    <a href="index.html" class="active">Home</a>
+    <a href="build.html" data-nav>Build</a>
+    <a href="checkout.html" data-nav>Checkout</a>
+  </nav>
+</header>
+
+<div id="stage">
+  <section id="hero">
+    <div>
+      <p class="kicker">Bead pattern studio</p>
+      <h1 class="display">BEAD<span>AZZLE</span></h1>
+      <p class="lede">Turn any image, word or stripe of color into a real, bead-by-bead peyote pattern — measured in millimeters, matched to a true palette, previewed in 3D before a single bead is threaded.</p>
+      <div class="hero-actions">
+        <a class="btn solid" href="build.html" data-nav>Open the studio</a>
+        <a class="btn" href="#" data-goto="1">How it works</a>
+      </div>
+    </div>
+    <div class="edge"></div>
+  </section>
+
+  <section id="features">
+    <div>
+      <p class="kicker">What's on the bench</p>
+      <h2 class="sect">A studio, not a toy</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="glyph">🖼</div>
+          <h3>Any asset</h3>
+          <p>Drop in an image, type a word, or paint stripes — each becomes a beadable grid.</p>
+        </div>
+        <div class="card">
+          <div class="glyph">🎨</div>
+          <h3>True-color matching</h3>
+          <p>Every pixel is matched in CIELAB space to a 29-color Czech rocaille palette.</p>
+        </div>
+        <div class="card">
+          <div class="glyph">💎</div>
+          <h3>Preview in 3D</h3>
+          <p>Orbit the finished piece, or bend it around a wrist with the circular mode.</p>
+        </div>
+        <div class="card">
+          <div class="glyph">📐</div>
+          <h3>Real-world readout</h3>
+          <p>Physical dimensions and exact bead counts, sized to real rocaille dimensions.</p>
+        </div>
+      </div>
+    </div>
+    <div class="edge"></div>
+  </section>
+
+  <section id="workflow">
+    <div>
+      <p class="kicker">Three moves</p>
+      <h2 class="sect">Asset in, pattern out</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="num">01 — LOAD</div>
+          <h3>Pick your asset</h3>
+          <p>An image, a word in any font, or stripes of color. Scale, rotate and nudge it into place.</p>
+        </div>
+        <div class="step">
+          <div class="num">02 — COMPUTE</div>
+          <h3>Quantize</h3>
+          <p>Beadazzle maps every cell to its nearest real bead color — dominant or blended tones.</p>
+        </div>
+        <div class="step">
+          <div class="num">03 — MAKE</div>
+          <h3>Take it with you</h3>
+          <p>Export a print-ready PNG or row-by-row JSON — or send the kit straight to checkout.</p>
+        </div>
+      </div>
+    </div>
+    <div class="edge"></div>
+  </section>
+
+  <section id="cta">
+    <div>
+      <p class="kicker">Ready when you are</p>
+      <h2 class="sect">The bench is set up</h2>
+      <p class="lede">The full studio runs right here in your browser — nothing to install, nothing to sign up for.</p>
+      <div class="hero-actions">
+        <a class="btn solid" href="build.html" data-nav>Start designing</a>
+      </div>
+      <p class="foot-note" style="margin-top:2.4rem;">© 2026 Beadazzle · a demo — checkout takes orders, not money</p>
+    </div>
+    <div class="edge"></div>
+  </section>
+</div>
+
+<div id="rail"><i></i></div>
+<div id="tag">1 / 4</div>
+<div class="hint">WHEEL · ARROWS · SWIPE</div>
+
+<script>window.SEQUENCE = ["shape", "scroll", "fade"];</script>
+<script src="js/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+/* ====================================================================
+   BEADAZZLE — site theme (Home / Checkout)
+   Shares the studio's design tokens: frosted glass surfaces,
+   rose accent, DM Sans + JetBrains Mono.
+   ==================================================================== */
+
+:root {
+    --bg-base: rgba(255, 255, 255, 0.045);
+    --bg-panel: rgba(255, 183, 206, 0.09);
+    --bg-elevated: rgba(255, 255, 255, 0.14);
+    --bg-input: rgba(255, 255, 255, 0.07);
+    --text-main: #fdfdfe;
+    --text-sec: #d4d4de;
+    --text-muted: #80808f;
+    --accent: #ff5c78;
+    --accent-dim: rgba(255, 92, 120, 0.12);
+    --accent-mid: rgba(255, 92, 120, 0.3);
+    --border: rgba(255, 255, 255, 0.16);
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --body-bg: #08080a;
+    --glass-sheen: linear-gradient(115deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.04) 28%, rgba(255,170,200,0.05) 55%, rgba(255,255,255,0.10) 100%);
+    --glass-rim: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 0 0 1px rgba(255,255,255,0.05);
+    --glass-blur: blur(24px) saturate(180%) brightness(1.08);
+    --font-ui: 'DM Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius: 8px;
+    --radius-sm: 5px;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body.site-page {
+    background:
+        radial-gradient(1100px 500px at 50% -8%, rgba(255, 92, 120, 0.09), transparent 70%),
+        radial-gradient(900px 600px at 85% 110%, rgba(255, 92, 120, 0.05), transparent 70%),
+        var(--body-bg);
+    color: var(--text-main);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+}
+body.deck-page { height: 100%; overflow: hidden; }
+body.scroll-page { min-height: 100%; }
+
+/* ---- header / nav (shared) ---- */
+.site-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.95rem 2rem;
+    background: var(--glass-sheen), rgba(255, 183, 206, 0.06);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-rim), 0 8px 32px rgba(0,0,0,0.45);
+}
+.site-logo-link { text-decoration: none; }
+.site-logo {
+    font-size: 15px; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+.site-logo span { color: var(--accent); }
+.site-nav a {
+    color: var(--text-muted); text-decoration: none;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.22em;
+    margin-left: 1.6rem; text-transform: uppercase;
+    transition: color 0.25s var(--ease);
+}
+.site-nav a:hover, .site-nav a.active { color: var(--accent); }
+
+/* ---- deck sections (home) ---- */
+#stage { position: fixed; inset: 0; overflow: hidden; }
+#stage section {
+    position: absolute; inset: 0; visibility: hidden;
+    display: grid; place-items: center; text-align: center;
+    padding: 5.5rem 1.5rem 3.5rem; overflow: hidden;
+}
+.edge { position: absolute; left: 0; right: 0; height: 3px; background: var(--accent);
+    box-shadow: 0 0 18px var(--accent); top: 0; display: none; }
+
+.kicker {
+    font-family: var(--font-mono); color: var(--accent);
+    font-size: 0.68rem; letter-spacing: 0.38em; text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+h1.display { font-size: clamp(2.6rem, 6.5vw, 4.8rem); font-weight: 700; letter-spacing: 0.02em; }
+h1.display span { color: var(--accent); }
+h2.sect { font-size: clamp(1.6rem, 3.2vw, 2.4rem); font-weight: 700; }
+.lede { color: var(--text-sec); max-width: 34rem; line-height: 1.75; margin: 1.1rem auto 0; font-size: 1.02rem; }
+
+.hero-actions { margin-top: 2.2rem; display: flex; gap: 1rem; justify-content: center; }
+
+/* ---- buttons ---- */
+.btn {
+    display: inline-block; padding: 0.65rem 1.6rem;
+    border: 1px solid var(--accent); border-radius: 999px;
+    background: var(--bg-input); color: var(--accent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    font-family: var(--font-ui); font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    cursor: pointer; text-decoration: none;
+    transition: all 0.3s var(--ease);
+}
+.btn:hover { background: var(--accent-dim); box-shadow: 0 0 16px var(--accent-dim); }
+.btn.solid { background: var(--accent); color: #1a050c; }
+.btn.solid:hover { background: #ff7d93; box-shadow: 0 4px 24px rgba(255, 92, 120, 0.35); }
+
+/* ---- glass cards ---- */
+.cards { display: flex; gap: 1.2rem; margin-top: 2.2rem; flex-wrap: wrap; justify-content: center; }
+.card {
+    width: 220px; padding: 1.6rem 1.2rem 1.4rem; text-align: center;
+    border: 1px solid var(--border); border-radius: 14px;
+    background: var(--glass-sheen), var(--bg-panel);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-rim), 0 12px 32px rgba(0,0,0,0.35);
+}
+.card .glyph { font-size: 1.7rem; margin-bottom: 0.7rem; }
+.card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+.card p { color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; }
+
+/* ---- workflow steps ---- */
+.steps { display: flex; gap: 1.2rem; margin-top: 2.2rem; flex-wrap: wrap; justify-content: center; }
+.step {
+    width: 230px; padding: 1.5rem 1.2rem; text-align: left;
+    border: 1px solid var(--border-subtle); border-radius: 14px;
+    background: var(--bg-base);
+}
+.step .num { font-family: var(--font-mono); color: var(--accent); font-size: 0.7rem; letter-spacing: 0.2em; }
+.step h3 { font-size: 1rem; margin: 0.5rem 0 0.4rem; }
+.step p { color: var(--text-muted); font-size: 0.8rem; line-height: 1.6; }
+
+/* ---- deck chrome ---- */
+#rail { position: fixed; right: 14px; top: 14vh; bottom: 14vh; width: 2px;
+    background: rgba(255, 92, 120, 0.18); z-index: 9; }
+#rail i { position: absolute; left: -2px; width: 6px; border-radius: 3px;
+    background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+#tag {
+    position: fixed; left: 1.4rem; bottom: 1.2rem; z-index: 9;
+    font: 11px/1 var(--font-mono); letter-spacing: 0.1em; color: var(--accent);
+    border: 1px solid var(--accent-mid); border-radius: 999px; padding: 0.55rem 0.95rem;
+    background: var(--bg-base); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.hint {
+    position: fixed; bottom: 1.35rem; left: 50%; transform: translateX(-50%);
+    color: var(--text-muted); font-size: 10px; letter-spacing: 0.28em; z-index: 9;
+    font-family: var(--font-mono);
+}
+
+/* ---- checkout ---- */
+.checkout-wrap { max-width: 46rem; margin: 0 auto; padding: 7rem 1.5rem 4rem; }
+.glass-panel {
+    border: 1px solid var(--border); border-radius: 16px;
+    background: var(--glass-sheen), var(--bg-panel);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-rim), 0 16px 40px rgba(0,0,0,0.4);
+    padding: 1.8rem;
+}
+.order-head { display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; }
+.order-preview {
+    width: 220px; max-width: 100%; border-radius: 10px;
+    border: 1px solid var(--border); background: #0d0f1c;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.order-meta { flex: 1; min-width: 200px; }
+.order-meta .meta-row {
+    display: flex; justify-content: space-between; gap: 1rem;
+    font-size: 0.85rem; padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.order-meta .meta-row span:first-child { color: var(--text-muted); }
+.bead-table { width: 100%; border-collapse: collapse; margin-top: 1.6rem; }
+.bead-table th {
+    text-align: left; font-family: var(--font-mono); font-size: 0.62rem;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-muted);
+    padding: 0.5rem 0.4rem; border-bottom: 1px solid var(--border);
+}
+.bead-table td { padding: 0.45rem 0.4rem; font-size: 0.85rem; border-bottom: 1px solid var(--border-subtle); }
+.bead-table td.num { text-align: right; font-family: var(--font-mono); font-size: 0.78rem; }
+.swatch {
+    display: inline-block; width: 14px; height: 14px; border-radius: 4px;
+    vertical-align: -2px; margin-right: 0.55rem;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+}
+.order-total {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 1.6rem; gap: 1rem; flex-wrap: wrap;
+}
+.order-total .figure { font-family: var(--font-mono); font-size: 1.3rem; color: var(--accent); }
+.foot-note { color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.12em; margin-top: 1.4rem; text-align: center; }
+.empty-state { text-align: center; padding: 3rem 1rem; }
+.empty-state p { color: var(--text-muted); margin: 0.8rem 0 1.6rem; }
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+}

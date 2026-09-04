@@ -1,0 +1,17 @@
+/* BEADAZZLE — site nav inside the studio header (build page only) */
+
+.site-nav {
+    display: flex; align-items: center; gap: 1.4rem;
+}
+.site-nav a {
+    color: var(--text-muted); text-decoration: none;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.22em;
+    text-transform: uppercase;
+    transition: color 0.25s var(--ease);
+}
+.site-nav a:hover, .site-nav a.active { color: var(--accent); }
+.site-logo-link { text-decoration: none; }
+
+@media (max-width: 900px) {
+    .site-nav { display: none; }
+}

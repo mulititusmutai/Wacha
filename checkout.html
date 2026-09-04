@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beadazzle — Checkout</title>
+<link rel="icon" type="image/png" href="Logo2.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<style>
+    /* demo order acknowledgement, same language as the studio's toasts */
+    .btn.done { background: var(--accent-dim); color: var(--accent); pointer-events: none; }
+</style>
+</head>
+<body class="site-page scroll-page">
+
+<header class="site-header">
+  <a class="site-logo-link" href="index.html"><span class="site-logo">BEAD<span>AZZLE</span></span></a>
+  <nav class="site-nav">
+    <a href="index.html" data-nav>Home</a>
+    <a href="build.html" data-nav>Build</a>
+    <a href="checkout.html" class="active">Checkout</a>
+  </nav>
+</header>
+
+<main class="checkout-wrap">
+  <p class="kicker">Checkout</p>
+  <h2 class="sect" style="margin-bottom:1.6rem;">Your kit</h2>
+
+  <!-- filled by js below when an order exists -->
+  <div id="order-root"></div>
+
+  <div id="empty-state" class="glass-panel empty-state" style="display:none;">
+    <h3>No design yet</h3>
+    <p>Compute a pattern in the studio, then send it here with <strong>Order Kit</strong> or the export panel.</p>
+    <a class="btn solid" href="build.html" data-nav>Open the studio</a>
+  </div>
+
+  <p class="foot-note">© 2026 Beadazzle · a demo — the order goes nowhere</p>
+</main>
+
+<script>
+(function () {
+    const DEMO_PRICE_PER_BEAD = 0.06;   // demo pricing only
+    let order = null;
+    try { order = JSON.parse(sessionStorage.getItem('beadazzle_order')); } catch (e) { /* ignore */ }
+
+    const root = document.getElementById('order-root');
+    const empty = document.getElementById('empty-state');
+
+    if (!order || !Array.isArray(order.beads) || !order.beads.length) {
+        empty.style.display = 'block';
+        return;
+    }
+
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const price = (order.totalBeads * DEMO_PRICE_PER_BEAD).toFixed(2);
+
+    const preview = order.preview
+        ? `<img class="order-preview" src="${order.preview}" alt="Pattern preview">`
+        : '';
+
+    const meta = `
+      <div class="order-meta">
+        <div class="meta-row"><span>Structure</span><span>${esc(order.mode === 'diamond' ? 'Diamond chain' : 'Peyote panel')}</span></div>
+        <div class="meta-row"><span>Grid</span><span>${order.grid.columns} × ${order.grid.rows} beads</span></div>
+        <div class="meta-row"><span>Finished size</span><span>${order.physical.width_mm} × ${order.physical.height_mm} mm</span></div>
+        <div class="meta-row"><span>Bead size</span><span>${order.bead.diameter_mm} mm ⌀ · ${order.bead.pitch_mm} mm pitch</span></div>
+        <div class="meta-row"><span>Colors</span><span>${order.beads.length}</span></div>
+      </div>`;
+
+    const rows = order.beads.map((b, i) => `
+      <tr>
+        <td><span class="swatch" style="background:${b.hex}"></span>${esc(b.name)}</td>
+        <td class="num">${b.count}</td>
+      </tr>`).join('');
+
+    root.innerHTML = `
+      <div class="glass-panel">
+        <div class="order-head">
+          ${preview}
+          ${meta}
+        </div>
+        <table class="bead-table">
+          <thead><tr><th>Bead</th><th style="text-align:right">Count</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="order-total">
+          <span style="color:var(--text-muted);font-size:.85rem;">${order.totalBeads} beads total</span>
+          <span class="figure">€${price}</span>
+        </div>
+        <div class="order-total" style="margin-top:1.2rem;">
+          <a class="btn" href="build.html" data-nav>Back to the studio</a>
+          <button class="btn solid" id="btn-place-order">Place order</button>
+        </div>
+      </div>`;
+
+    document.getElementById('btn-place-order').addEventListener('click', function () {
+        this.textContent = 'Ordered ✓';
+        this.classList.add('done');
+    });
+})();
+</script>
+</body>
+</html>

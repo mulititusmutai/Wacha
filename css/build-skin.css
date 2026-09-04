@@ -1,0 +1,253 @@
+/* ════════════════════════════════════════════════════════════════════
+   BEADAZZLE — site-skin override layer for the studio (build page)
+   Loads after build.css. Re-skins the studio in the site language:
+   glass panels, rose accents, generous rounding, mono microlabels.
+   Geometry-critical rules (bead grid, canvas transform) are untouched.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ---- page shell: stage (left ⅔) + control rail (right ⅓) ---- */
+body.build-page {
+    overflow: hidden;
+    background:
+        radial-gradient(1100px 500px at 30% -8%, rgba(255, 92, 120, 0.07), transparent 70%),
+        var(--body-bg);
+    color: var(--text-main);
+}
+body.build-page > header.site-header { height: 52px; padding: 0 1.4rem; }
+
+.build-shell {
+    position: fixed; inset: 52px 0 0 0;
+    display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 31vw, 470px);
+}
+
+/* ---- bead stage ---- */
+main.bead-stage {
+    position: relative; overflow: hidden; cursor: grab;
+    background-color: var(--canvas-bg);
+    background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 26px 26px;
+    transition: background-color 0.4s var(--ease);
+}
+main.bead-stage.grabbing { cursor: grabbing; }
+
+/* ---- stage strip: physical readout + hotkeys ---- */
+.stage-strip {
+    position: absolute; left: 16px; bottom: 16px; z-index: 10;
+    display: flex; align-items: center; gap: 1.4rem;
+    padding: 0.55rem 1.1rem;
+    background: var(--glass-sheen), rgba(255, 183, 206, 0.06);
+    border: 1px solid var(--border); border-radius: 999px;
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-rim), 0 12px 32px rgba(0,0,0,0.5);
+}
+.stage-strip .strip-block { display: flex; align-items: baseline; gap: 0.5rem; }
+.stage-strip .strip-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-muted);
+}
+.stage-strip .strip-value { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-main); }
+.stage-strip .strip-sep { width: 1px; height: 16px; background: var(--border); }
+.stage-strip .hotkeys { font-size: 10px; color: var(--text-muted); }
+.stage-strip .hotkeys kbd {
+    background: var(--bg-input); border: 1px solid var(--border); padding: 1px 5px;
+    border-radius: 4px; color: var(--text-sec); font-family: var(--font-mono); font-size: 9px;
+}
+
+/* ---- control rail ---- */
+aside.control-rail {
+    position: relative; overflow: hidden;
+    background: var(--glass-sheen), rgba(255, 183, 206, 0.05);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--glass-rim), -8px 0 40px rgba(0, 0, 0, 0.45);
+}
+
+/* rail header: current section name + progress + advanced toggle */
+.rail-head {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 1.3rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: linear-gradient(rgba(12, 10, 15, 0.88) 40%, rgba(12, 10, 15, 0.55));
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    pointer-events: none; /* let section content scroll through… */
+}
+.rail-head .adv-toggle { pointer-events: auto; } /* …but the toggle stays clickable */
+.rail-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--accent);
+}
+.rail-step { font: 11px var(--font-mono); color: var(--text-muted); letter-spacing: 0.1em; }
+
+/* rail section stack */
+.rail-stage { position: absolute; inset: 0; }
+.rail-section {
+    position: absolute; inset: 0;
+    padding: 3.4rem 1.3rem 7.5rem 1.3rem;
+    overflow-y: auto; overflow-x: hidden;
+    visibility: hidden; opacity: 0;
+    transform: translateX(34px);
+    transition: opacity 0.32s var(--ease), transform 0.32s var(--ease), visibility 0s linear 0.32s;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.rail-section::-webkit-scrollbar { width: 4px; }
+.rail-section::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.rail-section.is-active { visibility: visible; opacity: 1; transform: translateX(0);
+    transition: opacity 0.32s var(--ease), transform 0.32s var(--ease); }
+.rail-section.is-exit { visibility: visible; opacity: 0; transform: translateX(-34px);
+    transition: opacity 0.32s var(--ease), transform 0.32s var(--ease), visibility 0s linear 0.32s; }
+
+/* rail dots */
+.rail-dots {
+    position: absolute; left: 0.55rem; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px; z-index: 5;
+}
+.rail-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--border); cursor: pointer; padding: 0; border: none;
+    transition: background 0.25s var(--ease), box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.rail-dot:hover { background: var(--text-muted); }
+.rail-dot.active { background: var(--accent); box-shadow: 0 0 10px var(--accent-mid); transform: scale(1.25); }
+
+/* ---- rail action bar (always visible) ---- */
+.rail-actions {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+    display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+    padding: 0.85rem 1.3rem 1rem;
+    background: var(--glass-sheen), rgba(255, 183, 206, 0.07);
+    border-top: 1px solid var(--border);
+    backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--glass-rim), 0 -8px 32px rgba(0,0,0,0.4);
+}
+.rail-actions .btn-action { flex: 1; min-width: 86px; text-align: center; white-space: nowrap; }
+.rail-actions .btn-action.primary { flex: 2.2; }
+
+/* ---- buttons re-skinned as pills ---- */
+.btn-action {
+    padding: 9px 18px; font-weight: 700; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--border); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    transition: all 0.25s var(--ease); font-family: var(--font-ui);
+}
+.btn-action:active { transform: scale(0.96); }
+.btn-action.secondary { background: var(--bg-input); color: var(--text-sec); }
+.btn-action.secondary:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px var(--accent-dim); }
+.btn-action.primary { background: var(--accent); border-color: var(--accent); color: #1a050c; }
+.btn-action.primary:hover { background: #ff7d93; box-shadow: 0 4px 22px rgba(255, 92, 120, 0.4); }
+.btn-action:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none !important; transform: none !important; }
+
+/* ---- labels: mono microlabel style ---- */
+.rail-section label,
+.rail-section .control-group label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-muted);
+}
+.rail-kicker {
+    font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 1rem 0.15rem;
+}
+
+/* ---- glass cards for grouped controls ---- */
+.rail-section .control-group {
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.8rem;
+}
+.rail-section .control-group > label { display: block; margin-bottom: 0.55rem; }
+.rail-section .control-group:last-child { margin-bottom: 0; }
+
+/* ---- segmented toggles → pills ---- */
+.rocker-switch, .bead-mode-toggle {
+    background: var(--bg-base); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px; gap: 2px;
+}
+.rocker-switch button, .bead-mode-toggle button {
+    border-radius: 999px; font-size: 9.5px; letter-spacing: 0.12em; padding: 6px 4px;
+}
+.rocker-switch button.active, .bead-mode-toggle button.active {
+    background: var(--accent); color: #1a050c; box-shadow: 0 0 12px var(--accent-mid);
+}
+
+/* ---- tabs → pill segmented ---- */
+.tab-btn { border-radius: 999px; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 0; }
+.tab-btn.active { background: var(--accent); color: #1a050c; box-shadow: 0 0 12px var(--accent-mid); }
+
+/* ---- inputs ---- */
+input[type="number"], input[type="text"], select {
+    border-radius: 10px; background: var(--bg-base);
+}
+input[type="number"]:focus, input[type="text"]:focus, select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
+}
+input[type="color"] { border-radius: 8px; }
+
+/* ---- drop zone ---- */
+.drop-zone { border-radius: 14px; border-color: var(--border); background: var(--bg-base); }
+.drop-zone:hover { border-color: var(--accent); background: var(--accent-dim); }
+
+/* ---- zoom hud pill ---- */
+.viewport-hud { border-radius: 999px; }
+
+/* ---- modal & toasts → site language ---- */
+.export-modal { border-radius: 20px; }
+.export-option { border-radius: 14px; }
+.toast { border-radius: 999px; padding: 10px 20px; background: var(--glass-sheen), var(--bg-panel); backdrop-filter: blur(16px); }
+
+/* ---- stage bottom zone: readout strip left, view-hud slot right ---- */
+/* The right slot is shared: 2D shows the zoom pill, 3D shows the
+   orbit/pan/zoom bar — the two views never coexist, so they simply
+   trade places and never collide with the strip. */
+.stage-strip { max-width: calc(58% - 24px); }
+.stage-strip .strip-block { white-space: nowrap; flex-shrink: 0; }
+.stage-strip .hotkeys { font-size: 9px; white-space: nowrap; }
+@media (max-width: 1240px) {
+    .stage-strip .hotkeys { display: none; }
+}
+.viewport-hud {
+    left: auto; right: 16px;
+    max-width: min(380px, 38%);
+    flex-wrap: wrap; justify-content: flex-end; row-gap: 5px;
+}
+#hud-3d {
+    left: auto; right: 16px; transform: none;
+    max-width: min(380px, 38%);
+    flex-wrap: wrap; justify-content: flex-end; row-gap: 5px;
+    padding: 6px 12px; gap: 5px;
+}
+#hud-3d .hud3-btn { padding: 3px 9px; font-size: 10px; }
+#hud-3d .hud3-zoom { padding: 1px 8px; font-size: 14px; }
+#hud-3d #circ-control input[type="range"] { width: 52px; }
+
+/* ---- rail actions bar: same frost level as the rail head ---- */
+.rail-actions {
+    background: linear-gradient(rgba(12, 10, 15, 0.86), rgba(12, 10, 15, 0.8)), var(--glass-sheen);
+}
+
+/* ---- header status cluster ---- */
+.header-status { display: flex; align-items: center; gap: 0.7rem; }
+.system-status { display: flex; align-items: center; gap: 0.7rem; }
+#overflow-warning { display: none; }
+
+/* ---- advanced settings toggle (rail head) ---- */
+.adv-toggle {
+    display: flex; align-items: center; gap: 0.45rem;
+    cursor: pointer; user-select: none;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px;
+    transition: all 0.25s var(--ease);
+}
+.adv-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.adv-toggle input { display: none; }
+.adv-toggle input:checked + span { color: var(--accent); }
+.adv-toggle input:checked ~ span, .adv-toggle:has(input:checked) {
+    border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px var(--accent-dim);
+}
+.rail-section.adv-off { display: none; }
+
+@media (max-width: 900px) {
+    .build-shell { grid-template-columns: 1fr; }
+    aside.control-rail { display: none; }
+}
