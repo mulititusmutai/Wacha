@@ -1194,6 +1194,7 @@ import { handoffMixin } from './handoff.js';
                 panel3d.style.display = 'block';
                 hud3d.style.display   = 'flex';
                 hint3d.style.display  = 'block';
+                document.body.classList.add('view-3d');
 
                 document.getElementById('btn-view-2d').classList.remove('active');
                 document.getElementById('btn-view-3d').classList.add('active');
@@ -1222,6 +1223,7 @@ import { handoffMixin } from './handoff.js';
                 panel3d.style.display = 'none';
                 hud3d.style.display   = 'none';
                 hint3d.style.display  = 'none';
+                document.body.classList.remove('view-3d');
 
                 document.getElementById('btn-view-2d').classList.add('active');
                 document.getElementById('btn-view-3d').classList.remove('active');
@@ -1251,6 +1253,13 @@ import { handoffMixin } from './handoff.js';
                     document.getElementById('b3-circ').classList.add('active');
                     document.getElementById('b3-flat').classList.remove('active');
                     v.setMode('circular');
+                });
+
+                const glassSlider = document.getElementById('glass-slider');
+                glassSlider.addEventListener('input', () => {
+                    const pct = Number(glassSlider.value);
+                    document.getElementById('glass-val').textContent = pct + '%';
+                    v.setGlass(pct / 100);
                 });
             }
 

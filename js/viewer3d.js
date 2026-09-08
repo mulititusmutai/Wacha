@@ -8,6 +8,7 @@
                 this.canvas   = canvas;
                 this.mode     = 'flat';       // 'flat' | 'circular'
                 this.circMm   = 180;          // circumference mm for circular mode
+                this.glass    = 0.35;         // 0 = opaque plastic, 1 = max glassiness
                 this._meshes  = [];
                 this._geo     = null;
                 this._matCache = {};
@@ -133,18 +134,48 @@
                 return parseInt(hex.replace('#', ''), 16);
             }
 
+            // Glass-bead character: real rocaille glass is slightly translucent,
+            // never fully clear. Max transparency stays modest (22%) so the
+            // palette color still dominates; emissive and roughness compensate
+            // for the body the opacity blend takes away.
+            static GLASS_MAX_TRANSPARENCY = 0.22;
+
             _getMat(hex) {
                 if (!this._matCache[hex]) {
-                    this._matCache[hex] = new THREE.MeshStandardMaterial({
+                    const g = this.glass;
+                    const opacity = 1 - Viewer3D.GLASS_MAX_TRANSPARENCY * g;
+                    // Shine comes from specular, not lighting: a tight base
+                    // roughness plus a clearcoat glaze keeps highlights crisp
+                    // without raising light/emissive energy (which washes the
+                    // palette color out).
+                    this._matCache[hex] = new THREE.MeshPhysicalMaterial({
                         color: this._hexToInt(hex),
                         emissive: new THREE.Color(this._hexToInt(hex)),
-                        emissiveIntensity: 0.08,
+                        emissiveIntensity: 0.08 + 0.06 * g,
                         metalness: 0.18,
-                        roughness: 0.28,
+                        roughness: 0.22 - 0.06 * g,
+                        clearcoat: 0.55 + 0.3 * g,
+                        clearcoatRoughness: 0.18 - 0.08 * g,
+                        transparent: opacity < 0.999,
+                        opacity,
+                        depthWrite: true,
                         side: THREE.FrontSide
                     });
                 }
                 return this._matCache[hex];
+            }
+
+            setGlass(g) {
+                this.glass = Math.max(0, Math.min(1, g));
+                // Materials are shared per color — rebuild the cache in place
+                // and reassign, so existing meshes update without a rebuild.
+                for (const hex in this._matCache) {
+                    this._matCache[hex].dispose();
+                    delete this._matCache[hex];
+                }
+                for (const m of this._meshes) {
+                    m.material = this._getMat(m.userData.hex);
+                }
             }
 
             // ── build scene from live quantizedGrid ───────────────────────────
@@ -200,6 +231,7 @@
                         const cell = grid[r]?.[c];
                         if (!cell) continue;
                         const mesh = new THREE.Mesh(this._geo, this._getMat(cell.finalColor));
+                        mesh.userData.hex = cell.finalColor;
                         mesh.position.set(
                             offsetX + c * step + shifted,
                             offsetY + (ROWS - 1 - r) * rowHeight,
@@ -237,6 +269,7 @@
                         if (!cell) continue;
                         const angle = startAngle + c * angStep + angShift;
                         const mesh  = new THREE.Mesh(this._geo, this._getMat(cell.finalColor));
+                        mesh.userData.hex = cell.finalColor;
                         mesh.position.set(
                             Math.sin(angle) * arcRadius,
                             offsetY + (ROWS - 1 - r) * rowHeight,

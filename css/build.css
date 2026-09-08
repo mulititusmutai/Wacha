@@ -489,6 +489,17 @@
             background: var(--accent); cursor: pointer; border: none;
         }
         #circ-val { font-size: 10px; font-family: var(--font-mono); color: rgba(255,255,255,0.5); width: 38px; }
+        /* glassiness control — always visible in the 3D HUD */
+        #glass-control { display: flex; align-items: center; gap: 6px; }
+        #glass-control input[type="range"] {
+            width: 72px; -webkit-appearance: none; appearance: none;
+            height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; outline: none; cursor: pointer;
+        }
+        #glass-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+            background: var(--accent); cursor: pointer; border: none;
+        }
+        #glass-val { font-size: 10px; font-family: var(--font-mono); color: rgba(255,255,255,0.5); width: 30px; }
 
         /* ════════════════════════════════════════════════════════════════
            MOBILE SHELL  —  max-width: 768px

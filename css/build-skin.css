@@ -210,15 +210,20 @@ input[type="color"] { border-radius: 8px; }
     max-width: min(380px, 38%);
     flex-wrap: wrap; justify-content: flex-end; row-gap: 5px;
 }
+/* 3D HUD: one coherent single-row pill, anchored bottom-right so it
+   never collides with the readout strip on the left. */
 #hud-3d {
     left: auto; right: 16px; transform: none;
-    max-width: min(380px, 38%);
-    flex-wrap: wrap; justify-content: flex-end; row-gap: 5px;
-    padding: 6px 12px; gap: 5px;
+    max-width: none; flex-wrap: nowrap;
+    padding: 6px 14px; gap: 8px;
 }
-#hud-3d .hud3-btn { padding: 3px 9px; font-size: 10px; }
-#hud-3d .hud3-zoom { padding: 1px 8px; font-size: 14px; }
-#hud-3d #circ-control input[type="range"] { width: 52px; }
+#hud-3d .hud3-btn { padding: 3px 10px; font-size: 10px; }
+#hud-3d .hud3-zoom { padding: 1px 9px; font-size: 14px; width: 30px; }
+#hud-3d #circ-control input[type="range"],
+#hud-3d #glass-control input[type="range"] { width: 52px; }
+/* the 2D move/scale/center hotkeys mean nothing in the 3D view */
+body.view-3d .stage-strip .hotkeys,
+body.view-3d .stage-strip .hotkeys + .strip-sep { display: none; }
 
 /* ---- rail actions bar: same frost level as the rail head ---- */
 .rail-actions {
