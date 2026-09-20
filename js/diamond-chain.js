@@ -23,7 +23,7 @@ import {
                 this.params = Object.assign({
                     sizeLevel: 'M',        // S | M | L — enforces the chain length
                     chainCount: 2,         // unbounded; 6-row clamp is the only limit
-                    beadIdx: 3,            // index into BEAD_SIZES.rocaille
+                    beadIdx: 0,            // index into BEAD_SIZES.rocaille
                     mode: 'SOLID',         // SOLID fills | TEXT (one char per diamond)
                     text: 'HI',
                     font: 'Arial',
@@ -258,19 +258,18 @@ import {
                             if (sortedBins.length > 0) {
                                 const b1 = sortedBins[0]; const b2 = sortedBins[1] || null;
                                 const r1 = Math.round(b1.r / b1.count); const g1 = Math.round(b1.g / b1.count); const b1Val = Math.round(b1.b / b1.count);
-                                const t1Options = getClosestPaletteColors(r1, g1, b1Val, 3);
-                                let t2Options = null, blendOptions = null;
+                                const t1Options = getClosestPaletteColors(r1, g1, b1Val, 2);
+                                let t2Options = null;
                                 let defaultR = r1, defaultG = g1, defaultB = b1Val;
                                 let r2 = 0, g2 = 0, b2Val = 0, blendR = r1, blendG = g1, blendB = b1Val;
                                 if (b2) {
                                     r2 = Math.round(b2.r / b2.count); g2 = Math.round(b2.g / b2.count); b2Val = Math.round(b2.b / b2.count);
-                                    t2Options = getClosestPaletteColors(r2, g2, b2Val, 3);
+                                    t2Options = getClosestPaletteColors(r2, g2, b2Val, 2);
                                     const ratio1 = b1.count / (b1.count + b2.count);
                                     const ratio2 = b2.count / (b1.count + b2.count);
                                     blendR = Math.round(r1 * ratio1 + r2 * ratio2);
                                     blendG = Math.round(g1 * ratio1 + g2 * ratio2);
                                     blendB = Math.round(b1Val * ratio1 + b2Val * ratio2);
-                                    blendOptions = getClosestPaletteColors(blendR, blendG, blendB, 3);
                                     defaultR = Math.round(r1 * (1 - alpha) + blendR * alpha);
                                     defaultG = Math.round(g1 * (1 - alpha) + blendG * alpha);
                                     defaultB = Math.round(b1Val * (1 - alpha) + blendB * alpha);
@@ -282,8 +281,7 @@ import {
                                     manualOverride: false,
                                     tabs: [
                                         { rawColor: `rgb(${r1},${g1},${b1Val})`, options: t1Options },
-                                        b2 ? { rawColor: `rgb(${r2},${g2},${b2Val})`, options: t2Options } : null,
-                                        b2 ? { rawColor: `rgb(${blendR},${blendG},${blendB})`, options: blendOptions } : null
+                                        b2 ? { rawColor: `rgb(${r2},${g2},${b2Val})`, options: t2Options } : null
                                     ]
                                 };
                             } else {

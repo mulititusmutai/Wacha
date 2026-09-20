@@ -107,9 +107,50 @@ export const handoffMixin = {
                 .sort((a, b) => b.count - a.count);
             const totalBeads = beads.reduce((sum, b) => sum + b.count, 0);
 
+            let layout = null;
+            if (this.params.mode === 'diamond') {
+                const g = this._chainGeo || (this.chain && this.chain.derive ? this.chain.derive() : null);
+                const grids = this.chain?.quantizedGrid || [];
+                layout = {
+                    mode: 'diamond',
+                    chainParams: this.chain?.params ? JSON.parse(JSON.stringify(this.chain.params)) : null,
+                    numDiamonds: grids.length,
+                    diamonds: grids.map(grid => grid.map(row => row.map(cell => {
+                        if (!cell) return null;
+                        return {
+                            color: cell.finalColor,
+                            name: HEX_TO_NAME[cell.finalColor] || "Unknown"
+                        };
+                    })))
+                };
+            } else {
+                const { cols, rows } = this.params;
+                const matrix = [];
+                for (let r = 0; r < rows; r++) {
+                    const row = [];
+                    for (let c = 0; c < cols; c++) {
+                        const cell = this.quantizedGrid?.[r]?.[c];
+                        row.push(cell ? { color: cell.finalColor, name: HEX_TO_NAME[cell.finalColor] || "Unknown" } : null);
+                    }
+                    matrix.push(row);
+                }
+                layout = {
+                    mode: 'peyote',
+                    matrix
+                };
+            }
+
             const payload = {
                 created: new Date().toISOString(),
                 mode: this.params.mode,
+                settings: {
+                    colLevel: this.params.colLevel,
+                    rowLevel: this.params.rowLevel,
+                    groundColor: this.params.groundColor,
+                    outlineEnabled: this.params.outlineEnabled,
+                    outlineColor: this.params.outlineColor,
+                    algoMode: this.algoMode
+                },
                 grid: { columns: this.params.cols, rows: this.params.rows },
                 bead: { diameter_mm: this.params.diam, pitch_mm: this.params.pitch },
                 physical: {
@@ -118,6 +159,7 @@ export const handoffMixin = {
                 },
                 totalBeads,
                 beads,
+                layout,
                 preview: this._orderPreview()
             };
             sessionStorage.setItem('beadazzle_order', JSON.stringify(payload));

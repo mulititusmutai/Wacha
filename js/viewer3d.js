@@ -28,8 +28,7 @@
 
                 // ── scene ─────────────────────────────────────────────────────
                 this.scene = new THREE.Scene();
-                const isDark = document.documentElement.dataset.theme !== 'light';
-                this.scene.background = new THREE.Color(isDark ? 0x0a0a12 : 0xb8a898);
+                this.updateBackground();
 
                 // Wide FOV for many-bead patterns — matches standalone viewer feel
                 this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 800);
@@ -327,8 +326,16 @@
             }
 
             updateBackground() {
+                const stage = document.getElementById('viewport') || document.querySelector('.bead-stage');
+                if (stage) {
+                    const bg = window.getComputedStyle(stage).backgroundColor;
+                    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+                        this.scene.background = new THREE.Color(bg);
+                        return;
+                    }
+                }
                 const isDark = document.documentElement.dataset.theme !== 'light';
-                this.scene.background = new THREE.Color(isDark ? 0x0a0a12 : 0xb8a898);
+                this.scene.background = new THREE.Color(isDark ? 0x0d0f1c : 0xe2dbce);
             }
 
             setMoveMode(m) {

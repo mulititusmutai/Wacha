@@ -1,0 +1,25 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Searchable patterns (no customer personal details)
+    match /patterns/{nickname} {
+      allow read: if true;
+      allow create: if request.resource.data.nickname is string
+                    && request.resource.data.beads is list;
+      allow update, delete: if false;
+    }
+
+    // Customer orders (restricted, write-only from checkout)
+    match /customer_orders/{orderId} {
+      allow create: if request.resource.data.customer.name is string
+                    && request.resource.data.customer.contactPhone is string;
+      allow read, update, delete: if false;
+    }
+
+    // Legacy orders collection fallback
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+  }
+}

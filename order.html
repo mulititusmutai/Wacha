@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beadazzle — View Order</title>
+<link rel="icon" type="image/png" href="Logo2.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<style>
+    .pattern-card { max-width: 48rem; margin: 0 auto; padding: 7rem 1.5rem 4rem; }
+    .badge-priv { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-family: var(--font-mono); color: var(--accent); background: var(--accent-dim); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--accent-mid); margin-left: 0.6rem; vertical-align: middle; }
+</style>
+</head>
+<body class="site-page scroll-page">
+
+<header class="site-header">
+  <a class="site-logo-link" href="index.html"><span class="site-logo">BEAD<span>AZZLE</span></span></a>
+  <nav class="site-nav">
+    <a href="index.html" data-nav>Home</a>
+    <a href="build.html" data-nav>Build</a>
+    <a href="checkout.html" data-nav>Checkout</a>
+  </nav>
+</header>
+
+<main class="pattern-card">
+  <p class="kicker">Order Archive</p>
+  <div id="pattern-root">
+    <div class="glass-panel" style="text-align:center;padding:3rem 1rem;">
+      <p style="color:var(--text-muted)">Loading order details...</p>
+    </div>
+  </div>
+  <p class="foot-note">© 2026 Beadazzle · Handcrafted bead kits delivered to your doorstep</p>
+</main>
+
+<script type="module" src="./js/search.js"></script>
+<script type="module">
+import { db, doc, getDoc } from './js/firebase-config.js';
+
+(async function () {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+    const root = document.getElementById('pattern-root');
+
+    if (!id) {
+        root.innerHTML = `
+          <div class="glass-panel empty-state">
+            <h3>No order specified</h3>
+            <p>Use the search bar above to look up an order by its nickname.</p>
+            <a class="btn solid" href="build.html">Open Studio</a>
+          </div>`;
+        return;
+    }
+
+    try {
+        const snap = await getDoc(doc(db, 'patterns', id.toLowerCase()));
+        if (!snap.exists()) {
+            root.innerHTML = `
+              <div class="glass-panel empty-state">
+                <h3>Order not found</h3>
+                <p>No order matching "<strong>${id}</strong>" exists in our records.</p>
+                <a class="btn solid" href="build.html">Open Studio</a>
+              </div>`;
+            return;
+        }
+
+        const data = snap.data();
+
+        // Check privacy access
+        if (data.isPrivate) {
+            const isUnlocked = sessionStorage.getItem(`unlocked_${data.nickname}`) === 'true';
+            if (!isUnlocked) {
+                root.innerHTML = `
+                  <div class="glass-panel empty-state">
+                    <div style="font-size:2.4rem;margin-bottom:0.8rem;">🔒</div>
+                    <h3>Private Order: ${data.nickname}</h3>
+                    <p>This order is protected. Please enter its password to view the piece.</p>
+                    <button class="btn solid" id="btn-prompt-unlock">Unlock with PIN</button>
+                  </div>`;
+                document.getElementById('btn-prompt-unlock').addEventListener('click', () => {
+                    if (window._openPrivateOrderPrompt) {
+                        window._openPrivateOrderPrompt(data.nickname, data.password);
+                    }
+                });
+                return;
+            }
+        }
+
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        const preview = data.preview
+            ? `<img class="order-preview" src="${data.preview}" alt="Pattern preview">`
+            : '';
+
+        const meta = `
+          <div class="order-meta">
+            <div class="meta-row"><span>Nickname</span><span><strong>${esc(data.nickname)}</strong> ${data.isPrivate ? '<span class="badge-priv">🔒 Private</span>' : ''}</span></div>
+            <div class="meta-row"><span>Structure</span><span>${esc(data.mode === 'diamond' ? 'Diamond chain' : 'Peyote panel')}</span></div>
+            <div class="meta-row"><span>Grid</span><span>${data.grid?.columns || 0} × ${data.grid?.rows || 0} beads</span></div>
+            <div class="meta-row"><span>Finished size</span><span>${data.physical?.width_mm || 0} × ${data.physical?.height_mm || 0} mm</span></div>
+            <div class="meta-row"><span>Colors</span><span>${data.beads?.length || 0}</span></div>
+            <div class="meta-row"><span>Total beads</span><span>${data.totalBeads || 0}</span></div>
+          </div>`;
+
+        const rows = (data.beads || []).map((b) => `
+          <tr>
+            <td><span class="swatch" style="background:${b.hex}"></span>${esc(b.name)}</td>
+            <td class="num">${b.count}</td>
+          </tr>`).join('');
+
+        root.innerHTML = `
+          <div class="glass-panel">
+            <div class="order-head">
+              ${preview}
+              ${meta}
+            </div>
+            <table class="bead-table">
+              <thead><tr><th>Bead</th><th style="text-align:right">Count</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <div class="order-total" style="margin-top:1.6rem;">
+              <a class="btn" href="build.html">New Pattern</a>
+              <button class="btn solid" id="btn-reorder">Order this kit</button>
+            </div>
+          </div>`;
+
+        document.getElementById('btn-reorder').addEventListener('click', () => {
+            const rehydrate = { ...data };
+            if (rehydrate.layoutJson) {
+                try { rehydrate.layout = JSON.parse(rehydrate.layoutJson); } catch (e) {}
+            }
+            if (rehydrate.settingsJson) {
+                try { rehydrate.settings = JSON.parse(rehydrate.settingsJson); } catch (e) {}
+            }
+            sessionStorage.setItem('beadazzle_order', JSON.stringify(rehydrate));
+            location.href = 'checkout.html';
+        });
+
+    } catch (err) {
+        console.error('Error loading pattern:', err);
+        root.innerHTML = `
+          <div class="glass-panel empty-state">
+            <h3>Unable to load order</h3>
+            <p>An error occurred while communicating with Firestore.</p>
+          </div>`;
+    }
+})();
+</script>
+</body>
+</html>

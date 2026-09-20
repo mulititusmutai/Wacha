@@ -57,7 +57,7 @@ export const SIMPLE_PALETTE = RAW_PALETTE.map(p => {
         });
 export const HEX_TO_NAME = RAW_PALETTE.reduce((acc, p) => { acc[p.hex] = p.name; return acc; }, {});
 
-export function getClosestPaletteColors(r, g, b, count = 3) {
+export function getClosestPaletteColors(r, g, b, count = 2) {
             const lab = rgbToLab(r, g, b);
             return SIMPLE_PALETTE.map(p => ({ hex: p.hex, score: labDistance(lab, p.lab) }))
                 .sort((a, b) => a.score - b.score).slice(0, count).map(p => p.hex);
@@ -71,14 +71,10 @@ export function getClosestPaletteColors(r, g, b, count = 3) {
         // ╚═════════════════════════════════════════════════════════════════════╝
 export const BEAD_SIZES = {
             rocaille: [
-                { label: "5/0  (4.55mm)", diam: 4.55, pitch: 3.19 },
-                { label: "6/0  (4.00mm)", diam: 4.00, pitch: 2.80 },
-                { label: "8/0  (3.00mm)", diam: 3.00, pitch: 2.10 },
-                { label: "10/0 (2.30mm)", diam: 2.30, pitch: 1.61 },
-                { label: "11/0 (2.10mm)", diam: 2.10, pitch: 1.47 },
-                { label: "12/0 (1.90mm)", diam: 1.90, pitch: 1.33 },
-                { label: "13/0 (1.70mm)", diam: 1.70, pitch: 1.19 },
-                { label: "15/0 (1.45mm)", diam: 1.45, pitch: 1.02 },
+                { label: "5/0 (large)",      diam: 4.55, pitch: 3.19 },
+                { label: "6/0 (medium)",     diam: 4.00, pitch: 2.80 },
+                { label: "8/0 (small)",      diam: 3.00, pitch: 2.10 },
+                { label: "15/0 (wallpaper)",  diam: 1.45, pitch: 1.02 },
             ]
         };
 
