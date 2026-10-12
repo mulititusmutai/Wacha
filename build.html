@@ -124,6 +124,12 @@
                         <span id="circ-val">180mm</span>
                     </div>
                     <div class="hud3-sep"></div>
+                    <div id="glass-control">
+                        <span class="hud3-label">Glass</span>
+                        <input type="range" id="glass-slider" min="0" max="100" step="5" value="35">
+                        <span id="glass-val">35%</span>
+                    </div>
+                    <div class="hud3-sep"></div>
                     <button class="hud3-btn hud3-zoom" id="b3-zout">−</button>
                     <button class="hud3-btn hud3-zoom" id="b3-zin">+</button>
                     <button class="hud3-btn" id="b3-reset">Reset</button>
@@ -149,6 +155,13 @@
                         <div class="tier-interface">
                             <div class="source-swatch" id="t2-src"></div>
                             <div class="option-array" id="t2-opts"></div>
+                        </div>
+                    </div>
+                    <div class="tier-block" id="tier-3-block">
+                        <div class="tier-title">Combined Blend</div>
+                        <div class="tier-interface">
+                            <div class="source-swatch" id="t3-src"></div>
+                            <div class="option-array" id="t3-opts"></div>
                         </div>
                     </div>
                 </div>
@@ -524,6 +537,5 @@
         };
         wire(0);
     </script>
-    <script type="module" src="js/search.js"></script>
 </body>
 </html>

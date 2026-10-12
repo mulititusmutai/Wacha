@@ -36,48 +36,17 @@
     <a class="btn solid" href="build.html" data-nav>Open the studio</a>
   </div>
 
-  <p class="foot-note">© 2026 Beadazzle · Handcrafted bead kits delivered to your doorstep</p>
+  <p class="foot-note">© 2026 Beadazzle · a demo — the order goes nowhere</p>
 </main>
 
-<script type="module">
-import { db, collection, doc, setDoc, getDoc, addDoc, serverTimestamp } from './js/firebase-config.js';
-
-(async function () {
-    const DEMO_PRICE_PER_BEAD = 0.5;   // 0.5 KES per bead
+<script>
+(function () {
+    const DEMO_PRICE_PER_BEAD = 0.06;   // demo pricing only
     let order = null;
     try { order = JSON.parse(sessionStorage.getItem('beadazzle_order')); } catch (e) { /* ignore */ }
 
     const root = document.getElementById('order-root');
     const empty = document.getElementById('empty-state');
-
-    // If sessionStorage is empty, check if we arrived via ?id=[nickname] from search
-    const urlParams = new URLSearchParams(location.search);
-    const lookupId = urlParams.get('id');
-
-    if ((!order || !Array.isArray(order.beads) || !order.beads.length) && lookupId) {
-        try {
-            const snap = await getDoc(doc(db, 'patterns', lookupId.toLowerCase()));
-            if (snap.exists()) {
-                const data = snap.data();
-                if (data.isPrivate && sessionStorage.getItem(`unlocked_${data.nickname}`) !== 'true') {
-                    // Protected design
-                    if (window._openPrivateOrderPrompt) {
-                        window._openPrivateOrderPrompt(data.nickname, data.password);
-                    }
-                    return;
-                }
-                order = { ...data };
-                if (order.layoutJson) {
-                    try { order.layout = JSON.parse(order.layoutJson); } catch (e) {}
-                }
-                if (order.settingsJson) {
-                    try { order.settings = JSON.parse(order.settingsJson); } catch (e) {}
-                }
-            }
-        } catch (e) {
-            console.error('Error fetching order from query param:', e);
-        }
-    }
 
     if (!order || !Array.isArray(order.beads) || !order.beads.length) {
         empty.style.display = 'block';
@@ -85,9 +54,7 @@ import { db, collection, doc, setDoc, getDoc, addDoc, serverTimestamp } from './
     }
 
     const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    const rawCost = (order.totalBeads || 0) * DEMO_PRICE_PER_BEAD;
-    const numericPrice = rawCost > 0 ? Math.ceil(rawCost / 50) * 50 : 0;
-    const priceFormatted = numericPrice.toLocaleString();
+    const price = (order.totalBeads * DEMO_PRICE_PER_BEAD).toFixed(2);
 
     const preview = order.preview
         ? `<img class="order-preview" src="${order.preview}" alt="Pattern preview">`
@@ -109,7 +76,7 @@ import { db, collection, doc, setDoc, getDoc, addDoc, serverTimestamp } from './
       </tr>`).join('');
 
     root.innerHTML = `
-      <div class="glass-panel" id="checkout-panel">
+      <div class="glass-panel">
         <div class="order-head">
           ${preview}
           ${meta}
@@ -120,304 +87,19 @@ import { db, collection, doc, setDoc, getDoc, addDoc, serverTimestamp } from './
         </table>
         <div class="order-total">
           <span style="color:var(--text-muted);font-size:.85rem;">${order.totalBeads} beads total</span>
-          <span class="figure">KES ${priceFormatted}</span>
+          <span class="figure">€${price}</span>
         </div>
-
-        <div class="order-form">
-          <h4>Order & Customer Details</h4>
-          <div id="form-error" class="form-error"></div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="cust-name">Full Name</label>
-              <input type="text" id="cust-name" class="form-input" placeholder="e.g. Wanjiku Muthoni" autocomplete="name" required>
-            </div>
-            <div class="form-group">
-              <label for="order-nickname">Order Nickname</label>
-              <input type="text" id="order-nickname" class="form-input" placeholder="e.g. masai-cuff-01" autocomplete="off" required>
-              <div id="nickname-status" class="status-msg"></div>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="cust-contact">Contact</label>
-              <input type="tel" id="cust-contact" class="form-input" placeholder="e.g. 0712345678" autocomplete="tel" required>
-              <div class="form-group-inline">
-                <label class="form-checkbox-label">
-                  <input type="checkbox" id="check-same-mpesa" class="form-checkbox" checked>
-                  Same as M-Pesa number
-                </label>
-              </div>
-            </div>
-
-            <div class="form-group" id="mpesa-field-wrap" style="display:none;">
-              <label for="cust-mpesa">M-Pesa Number</label>
-              <input type="tel" id="cust-mpesa" class="form-input" placeholder="e.g. 07XXXXXXXX" autocomplete="tel">
-              <span class="form-hint">For future M-Pesa payment prompt</span>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Privacy</label>
-              <div class="form-group-inline" style="margin-top:0.4rem;">
-                <label class="form-checkbox-label">
-                  <input type="checkbox" id="check-private" class="form-checkbox" checked>
-                  Keep order private (request password in search)
-                </label>
-              </div>
-            </div>
-
-            <div class="form-group" id="password-field-wrap">
-              <label for="order-password">Order Password / PIN</label>
-              <div style="display:flex;gap:0.5rem;">
-                <input type="text" id="order-password" class="form-input" placeholder="Enter or generate PIN" style="flex:1;">
-                <button type="button" class="btn" id="btn-gen-pin" style="padding:0.4rem 0.9rem;font-size:0.65rem;">Generate</button>
-              </div>
-              <span class="form-hint">Used to unlock and view your order from search</span>
-            </div>
-          </div>
-
-          <div class="order-total" style="margin-top:1.4rem;">
-            <a class="btn" href="build.html" data-nav>Back to the studio</a>
-            <button class="btn solid" id="btn-place-order">Place order</button>
-          </div>
+        <div class="order-total" style="margin-top:1.2rem;">
+          <a class="btn" href="build.html" data-nav>Back to the studio</a>
+          <button class="btn solid" id="btn-place-order">Place order</button>
         </div>
       </div>`;
 
-    const btn = document.getElementById('btn-place-order');
-    const nameInput = document.getElementById('cust-name');
-    const nicknameInput = document.getElementById('order-nickname');
-    const contactInput = document.getElementById('cust-contact');
-    const sameMpesaCheck = document.getElementById('check-same-mpesa');
-    const mpesaWrap = document.getElementById('mpesa-field-wrap');
-    const mpesaInput = document.getElementById('cust-mpesa');
-    const privateCheck = document.getElementById('check-private');
-    const passwordWrap = document.getElementById('password-field-wrap');
-    const passwordInput = document.getElementById('order-password');
-    const genPinBtn = document.getElementById('btn-gen-pin');
-    const nickStatus = document.getElementById('nickname-status');
-    const errBox = document.getElementById('form-error');
-
-    function generateRandomPin() {
-        return Math.floor(100000 + Math.random() * 900000).toString();
-    }
-    passwordInput.value = generateRandomPin();
-
-    // If viewing an existing loaded order by nickname
-    if (order && order.nickname) {
-        nicknameInput.value = order.nickname;
-        nicknameInput.disabled = true;
-        nickStatus.textContent = 'Viewing saved design';
-        nickStatus.className = 'status-msg avail';
-        if (order.isPrivate !== undefined) {
-            privateCheck.checked = order.isPrivate;
-            passwordWrap.style.display = order.isPrivate ? 'flex' : 'none';
-            if (order.password) passwordInput.value = order.password;
-        }
-    }
-
-    genPinBtn.addEventListener('click', () => {
-        passwordInput.value = generateRandomPin();
-    });
-
-    sameMpesaCheck.addEventListener('change', () => {
-        mpesaWrap.style.display = sameMpesaCheck.checked ? 'none' : 'flex';
-        if (!sameMpesaCheck.checked) mpesaInput.focus();
-    });
-
-    privateCheck.addEventListener('change', () => {
-        passwordWrap.style.display = privateCheck.checked ? 'flex' : 'none';
-    });
-
-    // Nickname validation & live debounced uniqueness check
-    let checkTimer = null;
-    function normalizeNick(val) {
-        return val.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
-    }
-
-    async function verifyNicknameUniqueness(nick) {
-        if (!nick || nick.length < 3) {
-            nickStatus.textContent = 'Nickname must be at least 3 characters.';
-            nickStatus.className = 'status-msg taken';
-            return false;
-        }
-        try {
-            const snap = await getDoc(doc(db, 'patterns', nick));
-            if (snap.exists()) {
-                nickStatus.textContent = '✕ Nickname is already taken. Try another.';
-                nickStatus.className = 'status-msg taken';
-                return false;
-            } else {
-                nickStatus.textContent = '✓ Nickname is available!';
-                nickStatus.className = 'status-msg avail';
-                return true;
-            }
-        } catch (e) {
-            console.warn('Nickname check failed:', e);
-            return true;
-        }
-    }
-
-    nicknameInput.addEventListener('input', () => {
-        clearTimeout(checkTimer);
-        const raw = nicknameInput.value;
-        const normalized = normalizeNick(raw);
-        if (normalized !== raw) nicknameInput.value = normalized;
-
-        if (!normalized) {
-            nickStatus.textContent = '';
-            return;
-        }
-        checkTimer = setTimeout(() => {
-            verifyNicknameUniqueness(normalized);
-        }, 350);
-    });
-
-    function showError(msg) {
-        errBox.textContent = msg;
-        errBox.style.display = 'block';
-    }
-
-    function clearError() {
-        errBox.textContent = '';
-        errBox.style.display = 'none';
-    }
-
-    btn.addEventListener('click', async function () {
-        clearError();
-        const name = nameInput.value.trim();
-        const nickname = normalizeNick(nicknameInput.value);
-        const contact = contactInput.value.trim();
-        const mpesa = sameMpesaCheck.checked ? contact : mpesaInput.value.trim();
-        const isPrivate = privateCheck.checked;
-        const password = passwordInput.value.trim();
-
-        if (!name) {
-            showError('Please enter your full name.');
-            nameInput.focus();
-            return;
-        }
-
-        if (!nickname || nickname.length < 3) {
-            showError('Please enter a valid order nickname (at least 3 characters).');
-            nicknameInput.focus();
-            return;
-        }
-
-        if (!contact) {
-            showError('Please enter your contact phone number.');
-            contactInput.focus();
-            return;
-        }
-
-        if (!sameMpesaCheck.checked && !mpesa) {
-            showError('Please enter your M-Pesa phone number.');
-            mpesaInput.focus();
-            return;
-        }
-
-        if (isPrivate && !password) {
-            showError('Please specify or generate a password/PIN for your private order.');
-            passwordInput.focus();
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'Saving order...';
-
-        try {
-            // 1. Check uniqueness once more
-            const isUnique = await verifyNicknameUniqueness(nickname);
-            if (!isUnique) {
-                showError('Nickname is already taken. Please choose another nickname.');
-                btn.disabled = false;
-                btn.textContent = 'Place order';
-                return;
-            }
-
-            // 2. Save public/searchable pattern details (NO personal customer information)
-            // Note: Firestore does not support native nested arrays (like matrix[row][col]).
-            // Storing layout as a JSON string completely bypasses this limitation cleanly.
-            const layoutJson = order.layout ? JSON.stringify(order.layout) : null;
-            const settingsJson = order.settings ? JSON.stringify(order.settings) : null;
-
-            const patternDocument = {
-                nickname,
-                isPrivate,
-                password: isPrivate ? password : null,
-                mode: order.mode,
-                grid: order.grid,
-                bead: order.bead,
-                physical: order.physical,
-                totalBeads: order.totalBeads,
-                beads: order.beads,
-                layoutJson,
-                settingsJson,
-                preview: order.preview || null,
-                createdAt: serverTimestamp()
-            };
-            await setDoc(doc(db, 'patterns', nickname), patternDocument);
-
-            // 3. Save restricted customer order details
-            const customerOrderDoc = {
-                nickname,
-                customer: {
-                    name,
-                    contactPhone: contact,
-                    mpesaPhone: mpesa,
-                    isSameMpesa: sameMpesaCheck.checked
-                },
-                pricing: {
-                    currency: 'KES',
-                    total: numericPrice
-                },
-                status: 'pending',
-                createdAt: serverTimestamp()
-            };
-            const orderDocRef = await addDoc(collection(db, 'customer_orders'), customerOrderDoc);
-
-            // Clean up session storage
-            sessionStorage.removeItem('beadazzle_order');
-
-            // Render success confirmation card
-            const panel = document.getElementById('checkout-panel');
-            panel.innerHTML = `
-              <div class="order-confirmation">
-                <div class="success-icon">✓</div>
-                <h3>Order Registered!</h3>
-                <p style="color:var(--text-sec);font-size:0.92rem;">Thank you, ${esc(name)}. Your bead kit is being prepared.</p>
-                <div class="order-ref" style="font-size:1rem;padding:0.6rem 1.2rem;margin:1rem 0;">
-                  Order Nickname: <strong>${esc(nickname)}</strong>
-                </div>
-                ${isPrivate ? `
-                <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:0.8rem;max-width:320px;margin:0 auto 1.2rem;">
-                  <span style="font-size:0.75rem;color:var(--text-muted);display:block;">Access Password / PIN:</span>
-                  <strong style="color:var(--accent);font-family:var(--font-mono);font-size:1.1rem;letter-spacing:0.1em;">${esc(password)}</strong>
-                  <span style="font-size:0.72rem;color:var(--text-muted);display:block;margin-top:0.3rem;">Save this PIN to look up your design from search!</span>
-                </div>` : `
-                <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1.2rem;">Your design is public and can be searched by nickname in the header search box.</p>
-                `}
-                <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1.6rem;">
-                  Order Ref: <code style="font-family:var(--font-mono)">${orderDocRef.id}</code><br>
-                  We will reach you on <strong>${esc(contact)}</strong> for delivery updates.
-                </p>
-                <div style="display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;">
-                  <a class="btn" href="order.html?id=${encodeURIComponent(nickname)}">View Piece</a>
-                  <a class="btn solid" href="build.html">Design another piece</a>
-                </div>
-              </div>`;
-        } catch (err) {
-            console.error('Failed to log order:', err);
-            const detail = err && err.message ? err.message : String(err);
-            showError(`Failed to record order: ${detail}`);
-            btn.disabled = false;
-            btn.textContent = 'Place order';
-        }
+    document.getElementById('btn-place-order').addEventListener('click', function () {
+        this.textContent = 'Ordered ✓';
+        this.classList.add('done');
     });
 })();
 </script>
-<script type="module" src="js/search.js"></script>
 </body>
 </html>

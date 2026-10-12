@@ -53,23 +53,21 @@ export const gridMixin = {
 
         openNodePopover(col, row, screenX, screenY, cell) {
             document.getElementById('popover-coords').innerText = `[Col: ${col}, Row: ${row}]`;
-            this._setupTierDisplay('1', cell.tabs ? cell.tabs[0] : null, col, row);
-            this._setupTierDisplay('2', cell.tabs ? cell.tabs[1] : null, col, row);
+            this._setupTierDisplay('1', cell.tabs[0], col, row);
+            this._setupTierDisplay('2', cell.tabs[1], col, row);
+            this._setupTierDisplay('3', cell.tabs[2], col, row);
             this.popover.style.display = 'block';
             const vpRect = this.viewport.getBoundingClientRect();
             this.popover.style.left = Math.min(screenX - vpRect.left + 15, this.viewport.clientWidth - 340) + 'px';
-            this.popover.style.top  = Math.min(screenY - vpRect.top  + 15, this.viewport.clientHeight - 240) + 'px';
+            this.popover.style.top  = Math.min(screenY - vpRect.top  + 15, this.viewport.clientHeight - 320) + 'px';
         },
 
         _setupTierDisplay(tierNum, tabData, col, row) {
             const block = document.getElementById(`tier-${tierNum}-block`);
-            if (!block) return;
             if (!tabData) { block.style.display = 'none'; return; }
             block.style.display = 'block';
-            const srcEl = document.getElementById(`t${tierNum}-src`);
-            if (srcEl) srcEl.style.backgroundColor = tabData.rawColor;
+            document.getElementById(`t${tierNum}-src`).style.backgroundColor = tabData.rawColor;
             const container = document.getElementById(`t${tierNum}-opts`);
-            if (!container) return;
             container.innerHTML = '';
             tabData.options.forEach(hex => {
                 const btn = document.createElement('button');
@@ -203,15 +201,12 @@ export const gridMixin = {
             document.getElementById('popover-coords').innerText =
                 `D${u + 1} [Col: ${c}, Row: ${r}]` +
                 (cell.manualOverride ? ' · EDIT' : cell.isAmbiguous ? ' · AMBIG' : '');
-            [['1', cell.tabs ? cell.tabs[0] : null], ['2', cell.tabs ? cell.tabs[1] : null]].forEach(([n, tab]) => {
+            [['1', cell.tabs[0]], ['2', cell.tabs[1]], ['3', cell.tabs[2]]].forEach(([n, tab]) => {
                 const block = document.getElementById(`tier-${n}-block`);
-                if (!block) return;
                 if (!tab) { block.style.display = 'none'; return; }
                 block.style.display = 'block';
-                const srcEl = document.getElementById(`t${n}-src`);
-                if (srcEl) srcEl.style.backgroundColor = tab.rawColor;
+                document.getElementById(`t${n}-src`).style.backgroundColor = tab.rawColor;
                 const container = document.getElementById(`t${n}-opts`);
-                if (!container) return;
                 container.innerHTML = '';
                 tab.options.forEach(hex => {
                     const btn = document.createElement('button');
@@ -226,7 +221,7 @@ export const gridMixin = {
             this.popover.style.display = 'block';
             const vpRect = this.viewport.getBoundingClientRect();
             this.popover.style.left = Math.min(screenX - vpRect.left + 15, this.viewport.clientWidth - 340) + 'px';
-            this.popover.style.top  = Math.min(screenY - vpRect.top  + 15, this.viewport.clientHeight - 240) + 'px';
+            this.popover.style.top  = Math.min(screenY - vpRect.top  + 15, this.viewport.clientHeight - 320) + 'px';
         },
 
         injectChainOverride(beadEl, u, r, c, hex) {

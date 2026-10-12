@@ -46,7 +46,7 @@ import { handoffMixin } from './handoff.js';
                 this.params = {
                     mode: 'bracelet', rotLink: false,
                     colLevel: 'M', rowLevel: 'M',
-                    cols: 52, rows: 28, diam: 4.55, pitch: 3.19,
+                    cols: 52, rows: 28, diam: 2.3, pitch: 1.5,
                     scale: 1.0, rot: 0, tx: 0, ty: 0, patternAngle: 0,
                     zoom: ZOOM_TRUE_SCALE, // default = 1x real
                     groundColor: "#0d0f1c",
@@ -536,18 +536,19 @@ import { handoffMixin } from './handoff.js';
                         if (sortedBins.length > 0) {
                             const b1 = sortedBins[0]; const b2 = sortedBins[1] || null;
                             const r1 = Math.round(b1.r / b1.count); const g1 = Math.round(b1.g / b1.count); const b1Val = Math.round(b1.b / b1.count);
-                            const t1Options = getClosestPaletteColors(r1, g1, b1Val, 2);
-                            let t2Options = null;
+                            const t1Options = getClosestPaletteColors(r1, g1, b1Val, 3);
+                            let t2Options = null, blendOptions = null;
                             let defaultR = r1, defaultG = g1, defaultB = b1Val;
                             let r2 = 0, g2 = 0, b2Val = 0, blendR = r1, blendG = g1, blendB = b1Val;
                             if (b2) {
                                 r2 = Math.round(b2.r / b2.count); g2 = Math.round(b2.g / b2.count); b2Val = Math.round(b2.b / b2.count);
-                                t2Options = getClosestPaletteColors(r2, g2, b2Val, 2);
+                                t2Options = getClosestPaletteColors(r2, g2, b2Val, 3);
                                 const ratio1 = b1.count / (b1.count + b2.count);
                                 const ratio2 = b2.count / (b1.count + b2.count);
                                 blendR = Math.round(r1 * ratio1 + r2 * ratio2);
                                 blendG = Math.round(g1 * ratio1 + g2 * ratio2);
                                 blendB = Math.round(b1Val * ratio1 + b2Val * ratio2);
+                                blendOptions = getClosestPaletteColors(blendR, blendG, blendB, 3);
                                 defaultR = Math.round(r1 * (1 - alpha) + blendR * alpha);
                                 defaultG = Math.round(g1 * (1 - alpha) + blendG * alpha);
                                 defaultB = Math.round(b1Val * (1 - alpha) + blendB * alpha);
@@ -559,7 +560,8 @@ import { handoffMixin } from './handoff.js';
                                 manualOverride: false,
                                 tabs: [
                                     { rawColor: `rgb(${r1},${g1},${b1Val})`, options: t1Options },
-                                    b2 ? { rawColor: `rgb(${r2},${g2},${b2Val})`, options: t2Options } : null
+                                    b2 ? { rawColor: `rgb(${r2},${g2},${b2Val})`, options: t2Options } : null,
+                                    b2 ? { rawColor: `rgb(${blendR},${blendG},${blendB})`, options: blendOptions } : null
                                 ]
                             };
                             if (oldGrid && oldGrid[r] && oldGrid[r][c] && oldGrid[r][c].manualOverride) {
@@ -1251,6 +1253,13 @@ import { handoffMixin } from './handoff.js';
                     document.getElementById('b3-circ').classList.add('active');
                     document.getElementById('b3-flat').classList.remove('active');
                     v.setMode('circular');
+                });
+
+                const glassSlider = document.getElementById('glass-slider');
+                glassSlider.addEventListener('input', () => {
+                    const pct = Number(glassSlider.value);
+                    document.getElementById('glass-val').textContent = pct + '%';
+                    v.setGlass(pct / 100);
                 });
             }
 
